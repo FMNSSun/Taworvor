@@ -106,9 +106,17 @@ parseProcedure = do
   return (name, code)
 
 parseExpression :: Parser Expression
-parseExpression = (do { val <- parseValue; return $ Value' val; }) <|> parseOperator <|> parseLoad <|> parseStore <|> parseCall <|> parseIf <|> (try parseComment) <|> parseRequire
+parseExpression = 
+ do optional (try parseComment)
+    exp <- (do { val <- parseValue; return $ Value' val; }) <|> parseOperator <|> parseLoad <|> parseStore <|> parseCall <|> parseIf <|> parseRequire
+    optional (try parseComment)
+    return exp
 
-parseValue = (try parseLiteralInt) <|> (try parseLiteralDouble) <|> parseList <|> parseString
+parseValue = do
+  optional (try parseComment)
+  val <- (try parseLiteralInt) <|> (try parseLiteralDouble) <|> parseList <|> parseString
+  optional (try parseComment)
+  return val
 
 parseString :: Parser Value
 parseString = do
