@@ -1,0 +1,15 @@
+LIBRARY
+ ^AUTHOR mroman
+ ^NAME MATH
+ ^DESC 
+   (c) Roman Müntener, 2015
+
+   This library contains math-related procedures.   
+
+ ^IS
+
+    PROCEDURE SQUARE
+       "*
+    END
+
+END

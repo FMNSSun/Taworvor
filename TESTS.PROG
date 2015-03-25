@@ -1,0 +1,21 @@
+PROGRAM
+ ^AUTHOR mroman
+ ^NAME TESTS
+ ^DESC
+    (c) Roman Muentener, 2015
+
+    This contains some tests.
+
+ ^IS
+
+    PROCEDURE MAIN
+        CALL TESTS.ARITHMETIC
+        {SUCCESS
+}       )
+    END
+
+    PROCEDURE TESTS.ARITHMETIC
+        5 5+10;
+    END
+
+END

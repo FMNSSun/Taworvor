@@ -156,7 +156,7 @@ parseLiteralInt = do
 
 parseOperator :: Parser Expression
 parseOperator = do
-  ch <- oneOf "+-/*%@#$&|~`=<>\"\\:?'^_(!)"
+  ch <- oneOf "+-/*%@#$&|~`=<>\"\\:?'^_(!),;"
   optional spaces
   return (Operator ch)
 
@@ -273,6 +273,10 @@ evalOperator '|' (things, ((IntVal b) : (IntVal a) : xs)) = return (things, ((In
 evalOperator '~' (things, ((IntVal b) : xs)) = return (things, ((IntVal $ complement b) : xs))
 evalOperator '~' (things, ((ListVal b) : xs)) = return (things, ((IntVal $ length b) : xs))
 evalOperator '`' (things, xs) = getChar >>= (\x -> return (things, (IntVal (ord x)) : xs))
+evalOperator ',' (things, xs) = getContents >>= (\x -> return (things, (ListVal $ map (IntVal . ord) x) : xs))
+evalOperator ';' (things, (b : a : xs))
+ |b == a = return (things, xs)
+ |otherwise = error $ "FAIL: " ++ (show a) ++ "," ++ (show b)
 evalOperator '=' (things, (b : a : xs))
  |b == a = return (things, 1 : xs)
  |otherwise = return (things, 0 : xs)
