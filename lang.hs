@@ -7,14 +7,16 @@ import Data.Maybe
 import qualified Data.Map as M
 import Data.Char
 import Data.Bits
+import Numeric
+import Data.List
 
 data Value = IntVal Int | DoubleVal Double | ListVal [Value]
  deriving (Eq, Ord)
 
 instance Show Value where
   show (IntVal a) = show a
-  show (DoubleVal a) = show a
-  show (ListVal a) = show a
+  show (DoubleVal a) = showFFloat (Just 16) a ""
+  show (ListVal a) = "[" ++ intercalate " " (map show a) ++ "]"
 
 instance Num Value where
   (IntVal a) * (IntVal b) = IntVal $ a * b
@@ -104,19 +106,19 @@ parseProcedure = do
   return (name, code)
 
 parseExpression :: Parser Expression
-parseExpression = (do { val <- parseValue; return $ Value' val; }) <|> parseOperator <|> parseLoad <|> parseStore <|> parseCall <|> parseIf <|> parseString <|> parseList <|> (try parseComment) <|> parseRequire
+parseExpression = (do { val <- parseValue; return $ Value' val; }) <|> parseOperator <|> parseLoad <|> parseStore <|> parseCall <|> parseIf <|> (try parseComment) <|> parseRequire
 
-parseValue = parseLiteralInt <|> parseLiteralDouble
+parseValue = parseLiteralInt <|> parseLiteralDouble <|> parseList <|> parseString
 
-parseString :: Parser Expression
+parseString :: Parser Value
 parseString = do
   char '{'
   txt <- many1 $ noneOf "}"
   char '}'
   optional spaces
-  return $ Value' (ListVal (map (IntVal . ord) $ txt))
+  return $ (ListVal (map (IntVal . ord) $ txt))
 
-parseList :: Parser Expression
+parseList :: Parser Value
 parseList = do
   char '['
   optional spaces
@@ -124,7 +126,7 @@ parseList = do
   optional spaces
   char ']'
   optional spaces
-  return $ Value' (ListVal elems)
+  return $ (ListVal elems)
 
 parseComment :: Parser Expression
 parseComment = do
@@ -281,15 +283,14 @@ evalOperator '=' (things, (b : a : xs))
  |b == a = return (things, 1 : xs)
  |otherwise = return (things, 0 : xs)
 evalOperator '>' (things, (b : a : xs))
- |b > a = return (things, 1 : xs)
+ |a > b = return (things, 1 : xs)
  |otherwise = return (things, 0 : xs)
 evalOperator '<' (things, (b : a : xs))
- |b < a = return (things, 1 : xs)
+ |a < b = return (things, 1 : xs)
  |otherwise = return (things, 0 : xs)
 evalOperator '"' (things, b : xs) = return (things, b : b : xs)
 evalOperator '\\' (things, b : a : xs) = return (things, a : b : xs)
-evalOperator ':' (things, (IntVal b) : (IntVal a) : xs) = return (things, take b (drop a xs))
-evalOperator ':' (things, (ListVal b) : xs) = return (things, ((ListVal $ reverse b) : xs))
+evalOperator ':' (things, b : xs) = return (things, ((ListVal $ map (IntVal . ord) $ show b) : xs))
 evalOperator '?' (things, []) = return (things, [0])
 evalOperator '?' (things, xs) = return (things, 1 : xs)
 evalOperator '\'' (things, (b : xs)) = return (things, xs)
