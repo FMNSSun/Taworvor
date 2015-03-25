@@ -10,12 +10,32 @@ PROGRAM
 
     PROCEDURE MAIN
         CALL TESTS.ARITHMETIC
+        CALL TESTS.DISPLAY
+
         {SUCCESS
 }       )
     END
 
     PROCEDURE TESTS.ARITHMETIC
+
+        REM
+            Tests arithmetic built-ins.
+        ^END
+
         5 5+10;
+    END
+
+    PROCEDURE TESTS.DISPLAY
+
+        REM
+            This tests whether /:/ correctly
+            converts to string. 
+        ^END
+
+        10:{10};
+        D5.0:{5.0000000000000000};
+        [ 5 [ 6    9]]:{[5 [6 9]]};
+        {AB}:{[65 66]};
     END
 
 END
