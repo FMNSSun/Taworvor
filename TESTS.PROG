@@ -11,9 +11,103 @@ PROGRAM
     PROCEDURE MAIN
         CALL TESTS.ARITHMETIC
         CALL TESTS.DISPLAY
+        CALL TESTS.LIST
+        CALL TESTS.BITWISE
+        CALL TESTS.STACK
+        CALL TESTS.PARSE
+        CALL TESTS.COMPARE
 
         {SUCCESS
 }       )
+    END
+
+    PROCEDURE TESTS.COMPARE
+
+        REM
+           Tests comparison built-ins.
+        ^END
+
+        5 5=1;
+        5 6=0;
+        D5.0D5.0=1;
+        D5.0D5.01=0;
+
+        5 4>1;
+        5 4<0;
+        4 5>0;
+        4 5<1;
+
+        D5.0 D4.0>1;
+        D5.0 D4.0<0;
+        D4.0 D5.0>0;
+        D4.0 D5.0<1;
+
+        4 D4.0=0;
+        4 [4]=0;
+        D5.0 [1]=0;
+
+        4 D4.0<1;
+        D4.0 4>1;
+        1 D4.0<1;
+        D4.0 1>1;
+
+        4 [1]<1;
+        D4.0 [1]<1;
+
+        [1 2][2 2]>0;
+        [3 2][2 2]>1;
+        [0][1]<1;
+        [0 [9]][0 [9]]=1;
+        [1 2 3][4 5 6]=0;
+    END
+
+    PROCEDURE TESTS.PARSE
+
+        REM
+           Tests parsing.
+        ^END
+
+        {D5.12}/D5.12;
+        {5.12}*D5.12;
+        {51}/51;
+        {[1 [2]]}/[1 [2]];
+    END
+
+    PROCEDURE TESTS.STACK
+
+        REM
+           Tests stack built-ins
+        ^END
+
+        5 3\5;3;
+        5"5;5;
+        5 3'5;
+    END
+
+    PROCEDURE TESTS.BITWISE
+
+        REM
+           Tests bitwise built-ins
+        ^END
+
+        91 199$156;
+        91 199&67;
+        91 199|223;
+        91~-92;
+    END
+
+    PROCEDURE TESTS.LIST
+
+        REM
+           Tests list built-ins.
+        ^END
+
+        [1 2 3]%[1 2];
+        [D1.0 2 3]~3;
+        [2 5 0]^2;
+        [2 5 0]_[5 0];
+        [5 6 7]1!6;
+        5([5];
     END
 
     PROCEDURE TESTS.ARITHMETIC
@@ -23,6 +117,18 @@ PROGRAM
         ^END
 
         5 5+10;
+        D5.1 D0.9+D6.0;
+
+        5 3- 2;
+        D6.0 D0.1-D5.9;
+
+        10 2/5;
+        D10.0D2.0/D5.0;
+
+        5 5*25;
+        D5.0D5.0*D25.0;
+
+        10 4%2;
     END
 
     PROCEDURE TESTS.DISPLAY

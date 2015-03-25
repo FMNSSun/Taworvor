@@ -108,7 +108,7 @@ parseProcedure = do
 parseExpression :: Parser Expression
 parseExpression = (do { val <- parseValue; return $ Value' val; }) <|> parseOperator <|> parseLoad <|> parseStore <|> parseCall <|> parseIf <|> (try parseComment) <|> parseRequire
 
-parseValue = parseLiteralInt <|> parseLiteralDouble <|> parseList <|> parseString
+parseValue = (try parseLiteralInt) <|> (try parseLiteralDouble) <|> parseList <|> parseString
 
 parseString :: Parser Value
 parseString = do
@@ -264,7 +264,9 @@ store name state@(things, stack) = do
 evalOperator '+' (things, (b : a : xs)) = return (things, (a+b : xs))
 evalOperator '-' (things, (b : a : xs)) = return (things, (a-b : xs))
 evalOperator '*' (things, (b : a : xs)) = return (things, (a*b : xs))
+evalOperator '*' (things, ((ListVal b) :xs)) = return (things, ((DoubleVal $ read (stringify b))) : xs)
 evalOperator '/' (things, (b : a : xs)) = return (things, (a/b : xs))
+evalOperator '/' (things, ((ListVal b) :xs)) = return (things, ((runParserWithString parseValue (stringify b))) : xs)
 evalOperator '%' (things, ((IntVal b) : (IntVal a) : xs)) = return (things, ((IntVal $ a`mod`b) : xs))
 evalOperator '%' (things, ((ListVal b) : xs)) = return (things, ((ListVal $ init b) : xs))
 evalOperator '@' (things, (b : xs)) = print b >> return (things, xs)
@@ -302,9 +304,12 @@ evalOperator '_' (things, ((ListVal b) : xs)) = return (things, ((ListVal $ tail
 evalOperator '(' (things, (b : xs)) = return (things, ((ListVal [b]) : xs))
 evalOperator '!' (things, ((IntVal b):(ListVal a):xs)) = return (things, (a !! b) : xs)
 evalOperator ')' (things, ((ListVal b) : xs)) = do
-  let m = concatMap (\c -> case c of 
-                             IntVal a -> [chr a]
-                             _ -> "") b
+  let m = stringify b
   putStr m
   return (things, xs)
 evalOperator q a = error $ (show q) ++ " <_> " ++ (show a)
+
+stringify b = concatMap (\c -> case c of 
+                             IntVal a -> [chr a]
+                             _ -> "") b
+unstringify b = map (IntVal . ord) b
