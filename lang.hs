@@ -58,13 +58,13 @@ parseProgram = do
   string "PROGRAM"
   optional spaces
   string "^AUTHOR"
-  many1 $ noneOf "^"
+  many $ noneOf "^"
   optional spaces
   string "^NAME"
-  many1 $ noneOf "^"
+  many $ noneOf "^"
   optional spaces
   string "^DESC"
-  many1 $ noneOf "^"
+  many $ noneOf "^"
   optional spaces
   string $ "^IS"
   optional spaces
@@ -78,13 +78,13 @@ parseLibrary = do
   string "LIBRARY"
   optional spaces
   string "^AUTHOR"
-  many1 $ noneOf "^"
+  many $ noneOf "^"
   optional spaces
   string "^NAME"
-  many1 $ noneOf "^"
+  many $ noneOf "^"
   optional spaces
   string "^DESC"
-  many1 $ noneOf "^"
+  many $ noneOf "^"
   optional spaces
   string $ "^IS"
   optional spaces
