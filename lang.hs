@@ -10,7 +10,7 @@ import Data.Bits
 import Numeric
 import Data.List
 
-data Value = IntVal Int | DoubleVal Double | ListVal [Value] | Func [Expression]
+data Value = IntVal Int | DoubleVal Double | ListVal [Value] | Func [Expression] | Mark
  deriving (Eq, Ord)
 
 instance Show Value where
@@ -114,7 +114,7 @@ parseExpression =
 
 parseValue = do
   optional (try parseComment)
-  val <- (try parseLiteralInt) <|> (try parseLiteralDouble) <|> parseList <|> parseString <|> parseFunc
+  val <- (try parseLiteralInt) <|> (try parseLiteralDouble) <|> parseString <|> parseFunc
   optional (try parseComment)
   return val
 
@@ -135,16 +135,6 @@ parseString = do
   char '}'
   optional spaces
   return $ (ListVal (map (IntVal . ord) $ txt))
-
-parseList :: Parser Value
-parseList = do
-  char '['
-  optional spaces
-  elems <- many $ parseValue
-  optional spaces
-  char ']'
-  optional spaces
-  return $ (ListVal elems)
 
 parseComment :: Parser Expression
 parseComment = do
@@ -176,7 +166,7 @@ parseLiteralInt = do
 
 parseOperator :: Parser Expression
 parseOperator = do
-  ch <- oneOf "+-/*%@#$&|~`=<>\"\\:?'^_(!),;"
+  ch <- oneOf "+-/*%@#$&|~`=<>\"\\:?'^_(!),;[]"
   optional spaces
   return (Operator ch)
 
@@ -234,6 +224,16 @@ parseIf = do
   optional spaces
   return (If code_t code_f)
 
+parseList :: Parser Value
+parseList = do
+  char '['
+  optional spaces
+  elems <- many $ (parseValue <|> parseList)
+  optional spaces
+  char ']'
+  optional spaces
+  return $ (ListVal elems)
+
 runParserWithString p input = 
   case parse p "" input of
     Left err -> error $ show err
@@ -290,7 +290,7 @@ evalOperator '-' (things, (b : a : xs)) = return (things, (a-b : xs))
 evalOperator '*' (things, (b : a : xs)) = return (things, (a*b : xs))
 evalOperator '*' (things, ((ListVal b) :xs)) = return (things, ((DoubleVal $ read (stringify b))) : xs)
 evalOperator '/' (things, (b : a : xs)) = return (things, (a/b : xs))
-evalOperator '/' (things, ((ListVal b) :xs)) = return (things, ((runParserWithString parseValue (stringify b))) : xs)
+evalOperator '/' (things, ((ListVal b) :xs)) = return (things, ((runParserWithString (parseList <|> parseValue) (stringify b))) : xs)
 evalOperator '%' (things, ((IntVal b) : (IntVal a) : xs)) = return (things, ((IntVal $ a`mod`b) : xs))
 evalOperator '%' (things, ((ListVal b) : xs)) = return (things, ((ListVal $ init b) : xs))
 evalOperator '@' (things, (b : xs)) = print b >> return (things, xs)
@@ -304,7 +304,7 @@ evalOperator '`' (things, xs) = getChar >>= (\x -> return (things, (IntVal (ord 
 evalOperator ',' (things, xs) = getContents >>= (\x -> return (things, (ListVal $ map (IntVal . ord) x) : xs))
 evalOperator ';' (things, (b : a : xs))
  |b == a = return (things, xs)
- |otherwise = error $ "FAIL: " ++ (show a) ++ "," ++ (show b)
+ |otherwise = error $ "FAIL: " ++ (show a) ++ "," ++ (show b) ++ "," ++ (show xs)
 evalOperator '=' (things, (b : a : xs))
  |b == a = return (things, 1 : xs)
  |otherwise = return (things, 0 : xs)
@@ -331,9 +331,15 @@ evalOperator ')' (things, ((IntVal _) : xs)) = return (things, ((IntVal 1) : xs)
 evalOperator ')' (things, ((DoubleVal _) : xs)) = return (things, ((IntVal 2) : xs))
 evalOperator ')' (things, ((ListVal _) : xs)) = return (things, ((IntVal 3) : xs))
 evalOperator ')' (things, ((Func _) : xs)) = return (things, ((IntVal 4) : xs))
+evalOperator ')' (things, ((Mark) : xs)) = return (things, ((IntVal 5) : xs))
 evalOperator '!' (things, ((Func b) : xs)) = do
   (things', stack') <- eval b (things, xs)
   return (things', stack')
+evalOperator '[' (things, xs) = return (things, Mark : xs)
+evalOperator ']' (things, xs) = do
+  let t = takeWhile (/= Mark) xs
+  let t' = dropWhile (/= Mark) xs
+  return (things, (ListVal (reverse t)) : (tail t'))
 
 -- All hope is lost
 evalOperator q a = error $ (show q) ++ " <_> " ++ (show a)
