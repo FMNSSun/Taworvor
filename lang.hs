@@ -10,7 +10,7 @@ import Data.Bits
 import Numeric
 import Data.List
 
-data Value = IntVal Int | DoubleVal Double | ListVal [Value]
+data Value = IntVal Int | DoubleVal Double | ListVal [Value] | Func [Expression]
  deriving (Eq, Ord)
 
 instance Show Value where
@@ -48,7 +48,7 @@ data Expression = If [Expression] [Expression] |
                   Call String        |
                   String' String     |
                   Require String
- deriving Show
+ deriving (Eq, Ord, Show)
 
 parseName :: Parser String
 parseName = many $ oneOf ('.' : ['A'..'Z'])
@@ -108,15 +108,25 @@ parseProcedure = do
 parseExpression :: Parser Expression
 parseExpression = 
  do optional (try parseComment)
-    exp <- (do { val <- parseValue; return $ Value' val; }) <|> parseOperator <|> parseLoad <|> parseStore <|> parseCall <|> parseIf <|> parseRequire
+    exp <- (do { val <- parseValue; return $ Value' val; }) <|> parseOperator <|> parseLoad <|> parseStore <|> parseCall <|> parseFastCall <|> parseIf <|> parseRequire
     optional (try parseComment)
     return exp
 
 parseValue = do
   optional (try parseComment)
-  val <- (try parseLiteralInt) <|> (try parseLiteralDouble) <|> parseList <|> parseString
+  val <- (try parseLiteralInt) <|> (try parseLiteralDouble) <|> parseList <|> parseString <|> parseFunc
   optional (try parseComment)
   return val
+
+parseFunc :: Parser Value
+parseFunc = do
+  string "FUNC"
+  optional spaces
+  code <- many $ parseExpression
+  optional spaces
+  string "END"
+  optional spaces
+  return $ Func code
 
 parseString :: Parser Value
 parseString = do
@@ -169,6 +179,12 @@ parseOperator = do
   ch <- oneOf "+-/*%@#$&|~`=<>\"\\:?'^_(!),;"
   optional spaces
   return (Operator ch)
+
+parseFastCall :: Parser Expression
+parseFastCall = do
+  ch <- many1 $ oneOf ['a'..'z']
+  let ch' = map toUpper ch
+  return $ Call ch'
 
 parseRequire :: Parser Expression
 parseRequire = do
@@ -311,10 +327,15 @@ evalOperator '_' (things, ((IntVal b) : xs)) = return (things, ((DoubleVal $ (fr
 evalOperator '_' (things, ((ListVal b) : xs)) = return (things, ((ListVal $ tail b) : xs))
 evalOperator '(' (things, (b : xs)) = return (things, ((ListVal [b]) : xs))
 evalOperator '!' (things, ((IntVal b):(ListVal a):xs)) = return (things, (a !! b) : xs)
-evalOperator ')' (things, ((ListVal b) : xs)) = do
-  let m = stringify b
-  putStr m
-  return (things, xs)
+evalOperator ')' (things, ((IntVal _) : xs)) = return (things, ((IntVal 1) : xs))
+evalOperator ')' (things, ((DoubleVal _) : xs)) = return (things, ((IntVal 2) : xs))
+evalOperator ')' (things, ((ListVal _) : xs)) = return (things, ((IntVal 3) : xs))
+evalOperator ')' (things, ((Func _) : xs)) = return (things, ((IntVal 4) : xs))
+evalOperator '!' (things, ((Func b) : xs)) = do
+  (things', stack') <- eval b (things, xs)
+  return (things', stack')
+
+-- All hope is lost
 evalOperator q a = error $ (show q) ++ " <_> " ++ (show a)
 
 stringify b = concatMap (\c -> case c of 
