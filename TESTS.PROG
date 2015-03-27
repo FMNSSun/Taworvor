@@ -17,8 +17,20 @@ PROGRAM
         CALL TESTS.PARSE
         CALL TESTS.COMPARE
 
-        {SUCCESS
-}       )
+        
+        5 FUNC 3+ END ! 8;    REM This tests executing of funcs ^END
+        qqq11;                REM This tests the fastcall feature ^END
+
+        0)1;
+        D0.0)2;
+        [0])3;
+        FUNC 0 END)4;
+
+        65#10#
+    END
+
+    PROCEDURE QQQ
+      5 6+
     END
 
     PROCEDURE TESTS.COMPARE
