@@ -15,3 +15,11 @@ through your linux package manager).
 Building using GHC:
 
     ghc -o Taworvor -O3 Taworvor.hs
+
+# Running
+
+Pretty easy: Once built
+
+    ./Taworvor TESTS.PROG
+    # Runs the TESTS. If this doesn't show an A followed by a newline or if the program crashes
+    # something is wrong (please make a bug report in that case)
