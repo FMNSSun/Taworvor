@@ -51,12 +51,6 @@ data Expression = If [Expression] [Expression] |
                   Require String
  deriving (Eq, Ord, Show)
 
-main = do
- args <- getArgs
- case args of
-   [file] -> runFile file
-   _ -> putStrLn "Please specify a file!"
-
 parseName :: Parser String
 parseName = many $ oneOf ('.' : ['A'..'Z'])
 
@@ -357,3 +351,8 @@ stringify b = concatMap (\c -> case c of
                              IntVal a -> [chr a]
                              _ -> "") b
 unstringify b = map (IntVal . ord) b
+
+main = do
+  args <- getArgs
+  case args of
+    ["--file",path] -> runFile path
