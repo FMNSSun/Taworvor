@@ -20,6 +20,6 @@ Building using GHC:
 
 Pretty easy: Once built
 
-    ./Taworvor TESTS.PROG
+    ./Taworvor --file TESTS.PROG
     # Runs the TESTS. If this doesn't show an A followed by a newline or if the program crashes
     # something is wrong (please make a bug report in that case)
