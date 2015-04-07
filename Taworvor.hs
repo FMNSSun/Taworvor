@@ -9,6 +9,7 @@ import Data.Char
 import Data.Bits
 import Numeric
 import Data.List
+import System.Environment
 
 data Value = IntVal Int | DoubleVal Double | ListVal [Value] | Func [Expression] | Mark
  deriving (Eq, Ord)
@@ -49,6 +50,12 @@ data Expression = If [Expression] [Expression] |
                   String' String     |
                   Require String
  deriving (Eq, Ord, Show)
+
+main = do
+ args <- getArgs
+ case args of
+   [file] -> runFile file
+   _ -> putStrLn "Please specify a file!"
 
 parseName :: Parser String
 parseName = many $ oneOf ('.' : ['A'..'Z'])
@@ -166,7 +173,7 @@ parseLiteralInt = do
 
 parseOperator :: Parser Expression
 parseOperator = do
-  ch <- oneOf "+-/*%@#$&|~`=<>\"\\:?'^_(!),;[]"
+  ch <- oneOf "+-/*%@#$&|~`=<>\"\\:?'^_(!),;[]}"
   optional spaces
   return (Operator ch)
 
@@ -295,6 +302,7 @@ evalOperator '%' (things, ((IntVal b) : (IntVal a) : xs)) = return (things, ((In
 evalOperator '%' (things, ((ListVal b) : xs)) = return (things, ((ListVal $ init b) : xs))
 evalOperator '@' (things, (b : xs)) = print b >> return (things, xs)
 evalOperator '#' (things, ((IntVal b) : xs)) = putChar (chr b) >> return (things, xs)
+evalOperator '#' (things, ((ListVal (b:bs)) : xs)) = return (things, b : (ListVal bs) : xs)
 evalOperator '$' (things, ((IntVal b) : (IntVal a) : xs)) = return (things, ((IntVal $ a`xor`b) : xs))
 evalOperator '&' (things, ((IntVal b) : (IntVal a) : xs)) = return (things, ((IntVal $ (a .&. b)) : xs))
 evalOperator '|' (things, ((IntVal b) : (IntVal a) : xs)) = return (things, ((IntVal $ (a .|. b)) : xs))
@@ -340,6 +348,7 @@ evalOperator ']' (things, xs) = do
   let t = takeWhile (/= Mark) xs
   let t' = dropWhile (/= Mark) xs
   return (things, (ListVal (reverse t)) : (tail t'))
+evalOperator '}' (things, xs) = return (things, (ListVal xs) : xs)
 
 -- All hope is lost
 evalOperator q a = error $ (show q) ++ " <_> " ++ (show a)
